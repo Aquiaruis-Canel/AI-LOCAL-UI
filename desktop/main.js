@@ -16,7 +16,7 @@ const LOG = path.join(app.getPath('userData'), 'php.log');
 const PORT = +process.env.IA_LOCAL_PORT || 8765; // puerto fijo: así la URL de la API (/api.php/v1) no cambia
 const OLLAMA = process.env.IA_LOCAL_OLLAMA || 'http://127.0.0.1:11434';
 
-let win = null, php = null, baseUrl = '', quitting = false;
+let win = null, baseUrl = '', quitting = false;
 
 if (!app.requestSingleInstanceLock()) app.quit(); // una sola copia abierta
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
@@ -37,6 +37,8 @@ const randomPort = () => new Promise(res => {
   const s = net.createServer().listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); });
 });
 
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 function get(url, timeout = 1500) {
   return new Promise(res => {
     const r = http.get(url, { timeout }, x => { x.resume(); res(x.statusCode); });
@@ -45,39 +47,115 @@ function get(url, timeout = 1500) {
   });
 }
 
-async function startPhp() {
-  const bin = phpBinary();
-  if (!bin) throw new Error('No se encontró php.exe en ' + PHP_DIR + '.\nEjecuta preparar-php.ps1 (lo hace construir.bat) antes de empaquetar.');
-  fs.mkdirSync(DATA, { recursive: true });
-  const port = (await portFree(PORT)) ? PORT : await randomPort();
-  const args = ['-S', `127.0.0.1:${port}`, '-t', WEB, path.join(RES, 'router.php')];
-  if (bin !== 'php') { // PHP portátil: su php.ini y rutas absolutas (la carpeta del programa puede tener espacios)
-    const ca = path.join(PHP_DIR, 'cacert.pem');
-    args.unshift('-c', path.join(RES, 'php.ini'), '-d', `extension_dir=${path.join(PHP_DIR, 'ext')}`,
-      ...(fs.existsSync(ca) ? ['-d', `curl.cainfo=${ca}`, '-d', `openssl.cafile=${ca}`] : []));
-  }
-  try { if (fs.statSync(LOG).size > 5e6) fs.renameSync(LOG, LOG + '.old'); } catch (_) {}
-  const log = fs.createWriteStream(LOG, { flags: 'a' });
-  log.write(`\n==== ${new Date().toISOString()} ${bin} ${args.join(' ')}\n`);
-  php = spawn(bin, args, {
+// php -S atiende UNA petición a la vez (en Windows no admite PHP_CLI_SERVER_WORKERS). Con un solo PHP, una descarga
+// de modelo o una respuesta larga dejaban en cola todo lo demás (y al revés: la descarga esperaba a que acabara otra
+// petición). Por eso se arrancan varios PHP en puertos internos y un pequeño proxy de Node, en el puerto de siempre,
+// reparte cada petición al que esté libre, sin almacenar nada (el streaming llega trozo a trozo).
+const WORKERS = Math.max(1, Math.min(16, +process.env.IA_LOCAL_WORKERS || 4));
+let workers = [], front = null, phpBin = null, phpArgs = null, phpLog = null, crashes = [];
+
+function spawnWorker(w) {
+  w.proc = spawn(phpBin, ['-S', `127.0.0.1:${w.port}`, ...phpArgs], {
     cwd: WEB, windowsHide: true,
     env: { ...process.env, IA_LOCAL_DATA: DATA, IA_LOCAL_OLLAMA: OLLAMA },
   });
-  php.stdout.pipe(log); php.stderr.pipe(log);
-  php.on('exit', code => {
-    php = null;
-    if (!quitting) dialog.showErrorBox('Local AI UI', `El servidor interno (PHP) se cerró (código ${code}).\nRevisa el registro:\n${LOG}`);
+  w.proc.stdout.pipe(phpLog, { end: false }); w.proc.stderr.pipe(phpLog, { end: false });
+  w.proc.on('error', () => {});
+  w.proc.on('exit', code => {
+    w.proc = null;
+    if (quitting) return;
+    phpLog.write(`\n==== PHP (puerto ${w.port}) se cerró con código ${code}; se vuelve a abrir\n`);
+    const now = Date.now();
+    crashes = crashes.filter(t => now - t < 60000).concat(now);
+    if (crashes.length > 10) { // se cae una y otra vez: algo está mal, mejor avisar
+      quitting = true;
+      dialog.showErrorBox('Local AI UI', `El servidor interno (PHP) se cierra una y otra vez (código ${code}).\nRevisa el registro:\n${LOG}`);
+      app.quit();
+      return;
+    }
+    setTimeout(() => { if (!quitting) spawnWorker(w); }, 300);
   });
-  baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 60; i++) { // espera hasta 15 s a que responda
-    if (await get(baseUrl + '/index.html', 500) === 200) return;
-    if (!php) break;
-    await new Promise(r => setTimeout(r, 250));
-  }
-  throw new Error('El servidor interno (PHP) no arrancó. Revisa el registro:\n' + LOG);
 }
 
-function stopPhp() { quitting = true; if (php) { try { php.kill(); } catch (_) {} php = null; } }
+// Elige el PHP con menos peticiones en curso (y que esté vivo)
+function pickWorker() {
+  let best = null;
+  for (const w of workers) if (w.proc && (!best || w.active < best.active)) best = w;
+  return best;
+}
+
+const HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'proxy-connection', 'upgrade']);
+
+function proxy(req, res) {
+  const w = pickWorker();
+  if (!w) { res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('El servidor interno (PHP) no está disponible.'); return; }
+  w.active++;
+  let done = false;
+  const finish = () => { if (!done) { done = true; w.active--; } };
+  const headers = {};
+  for (const [k, v] of Object.entries(req.headers)) if (!HOP.has(k)) headers[k] = v;
+  headers.connection = 'close';
+  const up = http.request({ host: '127.0.0.1', port: w.port, method: req.method, path: req.url, headers, agent: false }, ur => {
+    const h = {};
+    for (const [k, v] of Object.entries(ur.headers)) if (!HOP.has(k)) h[k] = v;
+    res.writeHead(ur.statusCode, ur.statusMessage, h);
+    res.flushHeaders();
+    ur.on('data', d => res.write(d)); // cada trozo sale en cuanto llega (chat y descargas en streaming)
+    ur.on('end', () => { res.end(); finish(); });
+    ur.on('error', () => { res.destroy(); finish(); });
+  });
+  up.setNoDelay(true);
+  up.on('error', () => {
+    finish();
+    if (!res.headersSent) { res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Error del servidor interno (PHP).'); }
+    else res.destroy();
+  });
+  // Si la página corta (botón Detener o Cancelar), se corta también la petición a PHP para que deje de leer de Ollama
+  res.on('close', () => { if (!res.writableFinished) { up.destroy(); finish(); } });
+  req.pipe(up);
+}
+
+async function startPhp() {
+  phpBin = phpBinary();
+  if (!phpBin) throw new Error('No se encontró php.exe en ' + PHP_DIR + '.\nEjecuta preparar-php.ps1 (lo hace construir.bat) antes de empaquetar.');
+  fs.mkdirSync(DATA, { recursive: true });
+  phpArgs = ['-t', WEB, path.join(RES, 'router.php')];
+  if (phpBin !== 'php') { // PHP portátil: su php.ini y rutas absolutas (la carpeta del programa puede tener espacios)
+    const ca = path.join(PHP_DIR, 'cacert.pem');
+    phpArgs.unshift('-c', path.join(RES, 'php.ini'), '-d', `extension_dir=${path.join(PHP_DIR, 'ext')}`,
+      ...(fs.existsSync(ca) ? ['-d', `curl.cainfo=${ca}`, '-d', `openssl.cafile=${ca}`] : []));
+  }
+  try { if (fs.statSync(LOG).size > 5e6) fs.renameSync(LOG, LOG + '.old'); } catch (_) {}
+  phpLog = fs.createWriteStream(LOG, { flags: 'a' });
+  phpLog.write(`\n==== ${new Date().toISOString()} ${WORKERS} × ${phpBin} -S 127.0.0.1:<puerto> ${phpArgs.join(' ')}\n`);
+
+  for (let i = 0; i < WORKERS; i++) {
+    const w = { port: await randomPort(), active: 0, proc: null };
+    workers.push(w);
+    spawnWorker(w);
+  }
+  // Espera hasta 15 s a que respondan todos
+  for (const w of workers) {
+    let ok = false;
+    for (let i = 0; i < 60 && !ok; i++) {
+      ok = await get(`http://127.0.0.1:${w.port}/index.html`, 500) === 200;
+      if (!ok) await sleep(250);
+    }
+    if (!ok) throw new Error('El servidor interno (PHP) no arrancó. Revisa el registro:\n' + LOG);
+  }
+
+  const port = (await portFree(PORT)) ? PORT : await randomPort();
+  front = http.createServer({ noDelay: true, requestTimeout: 0, headersTimeout: 60000 }, proxy);
+  front.keepAliveTimeout = 5000;
+  await new Promise((res, rej) => front.once('error', rej).listen(port, '127.0.0.1', res));
+  baseUrl = `http://127.0.0.1:${port}`;
+}
+
+function stopPhp() {
+  quitting = true;
+  for (const w of workers) if (w.proc) { try { w.proc.kill(); } catch (_) {} w.proc = null; }
+  if (front) { try { front.close(); } catch (_) {} front = null; }
+}
 
 // ---- Ventana ----
 function isOwn(url) { return url.startsWith(baseUrl + '/'); }
@@ -161,7 +239,6 @@ function buildMenu() {
 }
 
 // ---- Ollama: abrirlo si está instalado pero apagado, y liberar la memoria al salir ----
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ollamaIsLocal = () => /^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/i.test(OLLAMA);
 
 function findOllama() {
