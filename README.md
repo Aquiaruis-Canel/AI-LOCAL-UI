@@ -57,7 +57,7 @@ construir.bat
 ```
 
 Requires [Node.js LTS](https://nodejs.org). The script downloads portable PHP and Electron and puts the build in `desktop\dist`.
-Details and troubleshooting (in Spanish): [docs/escritorio.md](docs/escritorio.md).
+Details and troubleshooting: [docs/en/desktop.md](docs/en/desktop.md).
 
 ### Option 3: XAMPP (for development)
 
@@ -86,18 +86,18 @@ Shortcuts: **Alt+N** new chat · **Ctrl+B** sidebar · **Ctrl+,** settings · **
 
 ## Documentation
 
-The technical documentation is in Spanish.
-
 | Document | Contents |
 | --- | --- |
-| [Architecture](docs/arquitectura.md) | Overview, layers, the path of a message, design decisions |
-| [Server (PHP)](docs/backend.md) | Routing, libraries, handlers, database, security |
-| [API reference](docs/api.md) | Every internal action and the OpenAI-compatible API, with examples |
-| [Interface (JavaScript)](docs/frontend.md) | Pages, load order, global state, saved settings, languages, icons, styles |
-| [How each feature works](docs/funciones.md) | Web search, code panel and edits, project folder, model memory, attachments, RAG… |
-| [Desktop app](docs/escritorio.md) | Electron, portable PHP, building, paths, troubleshooting |
-| [Contributing guide](docs/contribuir.md) | Conventions, adding actions, modules and translations |
-| [Third-party software](docs/terceros.md) | Bundled libraries and their licenses |
+| [Architecture](docs/en/architecture.md) | Overview, layers, the path of a message, design decisions |
+| [Server (PHP)](docs/en/backend.md) | Routing, libraries, handlers, database, security |
+| [API reference](docs/en/api.md) | Every internal action and the OpenAI-compatible API, with examples |
+| [Interface (JavaScript)](docs/en/frontend.md) | Pages, load order, global state, saved settings, languages, icons, styles |
+| [How each feature works](docs/en/features.md) | Web search, code panel and edits, project folder, model memory, attachments, RAG… |
+| [Desktop app](docs/en/desktop.md) | Electron, portable PHP, building, paths, troubleshooting |
+| [Contributing guide](docs/en/contributing.md) | Conventions, adding actions, modules and translations |
+| [Third-party software](docs/en/third-party.md) | Bundled libraries and their licenses |
+
+Every document is also available in Spanish (link at the top of each page).
 
 ## Structure
 
@@ -118,7 +118,7 @@ The technical documentation is in Spanish.
 │   └── tools/importar-mysql.php
 ├── desktop/                                   Desktop app (Electron + portable PHP) and scripts
 ├── searxng/                                   Optional local search engine (Docker)
-├── docs/                                      Documentation
+├── docs/                                      Documentation (Spanish; English in docs/en/)
 └── limpiar.bat                                Deletes build output and local data before publishing
 ```
 
@@ -130,7 +130,7 @@ The technical documentation is in Spanish.
 - The desktop app only listens on `127.0.0.1`. **With XAMPP**, Apache listens on your whole local network: don't expose it to the internet.
 - API keys are stored as hashes.
 
-More details in [docs/backend.md](docs/backend.md#seguridad).
+More details in [docs/en/backend.md](docs/en/backend.md#security).
 
 ## License
 
@@ -140,4 +140,4 @@ You may use, copy, modify and distribute this project (commercially too) as long
 keep the copyright notice and the `LICENSE` file in every copy or modified version, and mention Aquaruis Canel as the original author.
 To cite it in a work, use GitHub's «Cite this repository» button ([CITATION.cff](CITATION.cff)).
 
-Bundled libraries and external programs have their own licenses: see [docs/terceros.md](docs/terceros.md).
+Bundled libraries and external programs have their own licenses: see [docs/en/third-party.md](docs/en/third-party.md).
