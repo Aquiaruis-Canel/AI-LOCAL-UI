@@ -1,134 +1,143 @@
 # Local AI UI
 
-Por **Aquaruis Canel** · Licencia [MIT](LICENSE)
+**English** · [Español](README.es.md)
 
-Interfaz de chat para tus modelos de IA locales con [Ollama](https://ollama.com): todo se ejecuta y se guarda en tu PC.
-Busca en la web solo cuando hace falta (sin API keys), muestra el código que escribe la IA como archivos editables con vista previa,
-puede leer tus proyectos, genera imágenes y ofrece una API compatible con OpenAI.
+By **Aquaruis Canel** · [MIT](LICENSE) license
 
-Funciona como **programa de Windows** (`.exe`, sin instalar nada más que Ollama) o como **web en XAMPP**.
+A chat interface for your local AI models with [Ollama](https://ollama.com): everything runs and stays on your PC.
+It searches the web only when needed (no API keys), shows the code the AI writes as editable files with a live preview,
+can read your projects, generates images and offers an OpenAI-compatible API.
 
-## Funciones
+It runs as a **Windows program** (`.exe`, nothing to install besides Ollama) or as a **web app on XAMPP**.
 
-- **Chat** con respuestas en tiempo real, Markdown, código coloreado, razonamiento visible, editar, regenerar, exportar a Markdown o PDF.
-- **Búsqueda web automática:** la IA decide si la pregunta necesita internet (algo actual o que el modelo no sabe), redacta la consulta
-  con el contexto del chat, lee las páginas y cita las fuentes con su fecha. Sin API key (DuckDuckGo) o con [SearXNG](searxng/) local.
-- **Panel de código:** los bloques largos salen como archivos en un panel lateral, con vista previa de HTML/SVG. Si pides un cambio,
-  la IA envía solo las líneas a modificar y se crea una versión nueva (v2, v3…). Lista de archivos del chat y descarga en .zip.
-- **Carpeta del proyecto (solo lectura):** conecta una carpeta y la IA la explora con herramientas (listar, buscar, leer) para responder sobre tu código.
-- **Adjuntos:** imágenes (modelos con visión), PDF (también escaneados), Word, PowerPoint, Excel, epub, zip, notebooks… y RAG para documentos largos.
-- **Gestión de memoria:** un solo modelo cargado a la vez (al cambiar de IA, la anterior libera RAM y GPU), indicador de memoria y
-  descarga de modelos al cerrar.
-- **Memoria a largo plazo** sobre el usuario y títulos automáticos de los chats.
-- **Imágenes** con [FastSD CPU](https://github.com/rupeshs/fastsdcpu): en el chat y en una consola con biblioteca.
-- **API compatible con OpenAI** con claves locales, modelo asignado por clave y búsqueda web opcional.
-- **Gestor de modelos:** descargar, comprobar actualizaciones.
-- Interfaz en **español, English, Русский, 中文 y 日本語**, tema claro y oscuro.
+## Features
 
-## Requisitos
+- **Chat** with streaming answers, Markdown, syntax highlighting, visible reasoning, edit, regenerate, export to Markdown or PDF.
+- **Automatic web search:** the AI decides whether the question needs the internet (something current or that the model doesn't know),
+  writes the query using the chat context, reads the pages and cites the sources with their dates. No API key (DuckDuckGo) or a local
+  [SearXNG](searxng/).
+- **Code panel:** long code blocks open as files in a side panel, with an HTML/SVG preview. When you ask for a change, the AI sends only
+  the lines to modify and a new version is created (v2, v3…). List of the chat's files and download as .zip.
+- **Project folder (read-only):** connect a folder and the AI explores it with tools (list, search, read) to answer questions about your code.
+- **Attachments:** images (vision models), PDF (scanned ones too), Word, PowerPoint, Excel, epub, zip, notebooks… and RAG for long documents.
+- **Memory management:** a single model loaded at a time (switching AI frees the previous one's RAM and GPU), memory indicator, and
+  models unloaded on exit.
+- **Long-term memory** about the user and automatic chat titles.
+- **Images** with [FastSD CPU](https://github.com/rupeshs/fastsdcpu): in the chat and in a console with a gallery.
+- **OpenAI-compatible API** with local keys, a model assigned per key and optional web search.
+- **Model manager:** download models and check for updates.
+- Interface in **Español, English, Русский, 中文 and 日本語**, light and dark themes.
 
-- Windows 10/11 de 64 bits.
-- [Ollama](https://ollama.com/download) con al menos un modelo (`ollama pull qwen3:8b`). Si está instalado pero cerrado, la app lo abre sola.
-- Opcional: [FastSD CPU](https://github.com/rupeshs/fastsdcpu) para imágenes y [Docker Desktop](https://www.docker.com/products/docker-desktop/) para SearXNG.
+## Requirements
 
-La memoria (RAM o GPU) la pone el modelo: uno de 7–8B necesita unos 8 GB. Para la búsqueda web y la carpeta del proyecto se recomiendan
-modelos con herramientas como `qwen3` (se marcan como «herramientas» en el selector).
+- Windows 10/11, 64-bit.
+- [Ollama](https://ollama.com/download) with at least one model (`ollama pull qwen3:8b`). If it's installed but closed, the app starts it.
+- Optional: [FastSD CPU](https://github.com/rupeshs/fastsdcpu) for images and [Docker Desktop](https://www.docker.com/products/docker-desktop/) for SearXNG.
 
-## Instalación
+Memory (RAM or GPU) depends on the model: a 7–8B model needs about 8 GB. For web search and the project folder, models with tool
+support such as `qwen3` are recommended (they're marked «tools» in the model selector).
 
-### Opción 1: programa de Windows
+## Installation
 
-Descarga el instalador o la versión portátil desde **[Releases](../../releases)** y ábrelo.
-Como el programa no está firmado, Windows mostrará «Windows protegió su PC»: pulsa **Más información → Ejecutar de todas formas**.
+### Option 1: Windows program
 
-Tus datos se guardan en `%APPDATA%\Local AI UI\data` y se conservan al actualizar.
+1. Download the ZIP from **[Releases](../../releases)** and unzip it anywhere.
+2. Run `Local AI UI.exe` (it must stay in its folder, together with the other files).
 
-### Opción 2: construir el programa
+The program isn't code-signed, so Windows will show «Windows protected your PC»: click **More info → Run anyway**.
+
+Your data is stored in `%APPDATA%\Local AI UI\data` and is kept when you update.
+
+### Option 2: build the program
 
 ```bat
-git clone <url-de-este-repositorio>
-cd <carpeta>\desktop
+git clone <this-repository-url>
+cd <folder>\desktop
 construir.bat
 ```
 
-Necesita [Node.js LTS](https://nodejs.org). El script descarga PHP portátil y Electron, y deja el instalador en `desktop\dist`.
-Detalles y solución de problemas: [docs/escritorio.md](docs/escritorio.md).
+Requires [Node.js LTS](https://nodejs.org). The script downloads portable PHP and Electron and puts the build in `desktop\dist`.
+Details and troubleshooting (in Spanish): [docs/escritorio.md](docs/escritorio.md).
 
-### Opción 3: XAMPP (para desarrollar)
+### Option 3: XAMPP (for development)
 
-1. Copia la carpeta en `C:\xampp\htdocs\`.
-2. Arranca **Apache** en el panel de XAMPP. No hace falta MySQL: la base SQLite `data/ia_local.sqlite` se crea sola.
-   Si aparece «pdo_sqlite no está activa», quita el `;` de `extension=pdo_sqlite` en el `php.ini` de XAMPP y reinicia Apache.
-3. Abre `http://localhost/<carpeta>/`.
+1. Copy the folder into `C:\xampp\htdocs\`.
+2. Start **Apache** in the XAMPP control panel. MySQL isn't needed: the SQLite database `data/ia_local.sqlite` is created automatically.
+   If you see «pdo_sqlite no está activa», remove the `;` before `extension=pdo_sqlite` in XAMPP's `php.ini` and restart Apache.
+3. Open `http://localhost/<folder>/`.
 
-Las direcciones de Ollama y FastSD se cambian en `server/config.php`.
+Ollama and FastSD addresses are set in `server/config.php`.
 
-## Uso rápido
+## Quick guide
 
-| Quiero… | Cómo |
+The interface starts in Spanish: switch to English with the **Configuraciones** button (gear icon) → **Idioma**. The labels below are the English ones.
+
+| I want to… | How |
 | --- | --- |
-| Que busque en internet | Ya lo hace solo cuando hace falta. Selector **Web** junto al modelo: Automática / Siempre / Nunca. |
-| Ver o descargar el código que escribió | Botón **Abrir** de la tarjeta del archivo, o el botón de archivos de la cabecera (descarga en .zip). |
-| Cambiar ese código | Pídeselo en el chat («cambia el botón a verde»): aparece la versión siguiente. |
-| Que lea mi proyecto | Botón de carpeta junto al clip → elige la carpeta. Usa un modelo con «herramientas». |
-| Liberar la memoria de la GPU | Botón de expulsar junto al indicador de memoria, o cambia de modelo (se descarga el anterior). |
-| Usarlo desde otro programa | Crea una clave en **Consola de API keys** y usa `http://127.0.0.1:8765/api.php/v1` como base URL. |
-| Traer mis chats de la versión con MySQL | `desktop\importar-mysql.bat` con MySQL de XAMPP en marcha. |
+| Search the internet | It already does when needed. **Web** selector next to the model: Automatic / Always / Never. |
+| See or download the code it wrote | **Open** button on the file card, or the files button in the header (download as .zip). |
+| Change that code | Ask in the chat («make the button green»): the next version appears. |
+| Have it read my project | Folder button next to the paperclip → pick the folder. Use a model marked «tools». |
+| Free GPU memory | Eject button next to the memory indicator, or switch models (the previous one is unloaded). |
+| Use it from another program | Create a key in the **API keys console** and use `http://127.0.0.1:8765/api.php/v1` as the base URL. |
+| Bring my chats from the MySQL version | Run `desktop\importar-mysql.bat` with XAMPP's MySQL running. |
 
-Atajos: **Alt+N** chat nuevo · **Ctrl+B** barra lateral · **Ctrl+,** configuraciones · **Ctrl+K** buscar en los chats · **Esc** cerrar el panel de código.
+Shortcuts: **Alt+N** new chat · **Ctrl+B** sidebar · **Ctrl+,** settings · **Ctrl+K** search chats · **Esc** close the code panel.
 
-## Documentación
+## Documentation
 
-| Documento | Contenido |
+The technical documentation is in Spanish.
+
+| Document | Contents |
 | --- | --- |
-| [Arquitectura](docs/arquitectura.md) | Visión general, capas, recorrido de un mensaje, decisiones de diseño |
-| [Servidor (PHP)](docs/backend.md) | Enrutado, librerías, handlers, base de datos, seguridad |
-| [Referencia de la API](docs/api.md) | Todas las acciones internas y la API compatible con OpenAI, con ejemplos |
-| [Interfaz (JavaScript)](docs/frontend.md) | Páginas, orden de carga, estado global, ajustes guardados, idiomas, íconos, estilos |
-| [Cómo funciona cada función](docs/funciones.md) | Búsqueda web, panel de código y ediciones, carpeta, memoria de modelos, adjuntos, RAG… |
-| [App de escritorio](docs/escritorio.md) | Electron, PHP portátil, construir, rutas, solución de problemas |
-| [Guía para modificar el proyecto](docs/contribuir.md) | Convenciones, añadir acciones, módulos y traducciones |
-| [Software de terceros](docs/terceros.md) | Librerías incluidas y sus licencias |
+| [Architecture](docs/arquitectura.md) | Overview, layers, the path of a message, design decisions |
+| [Server (PHP)](docs/backend.md) | Routing, libraries, handlers, database, security |
+| [API reference](docs/api.md) | Every internal action and the OpenAI-compatible API, with examples |
+| [Interface (JavaScript)](docs/frontend.md) | Pages, load order, global state, saved settings, languages, icons, styles |
+| [How each feature works](docs/funciones.md) | Web search, code panel and edits, project folder, model memory, attachments, RAG… |
+| [Desktop app](docs/escritorio.md) | Electron, portable PHP, building, paths, troubleshooting |
+| [Contributing guide](docs/contribuir.md) | Conventions, adding actions, modules and translations |
+| [Third-party software](docs/terceros.md) | Bundled libraries and their licenses |
 
-## Estructura
+## Structure
 
 ```
-├── index.html · imagenes.html · claves.html   Las tres páginas (chat, imágenes, API keys)
-├── api.php                                    Punto de entrada de la API
+├── index.html · imagenes.html · claves.html   The three pages (chat, images, API keys)
+├── api.php                                    API entry point
 ├── assets/
 │   ├── css/styles.css
 │   ├── js/common.js · icons.js
-│   ├── js/i18n/                               Traducciones y motor de idiomas
-│   ├── js/chat/                               El chat, un archivo por tema
-│   ├── js/pages/                              Consolas de imágenes y de API keys
-│   └── vendor/                                Librerías incluidas (funciona sin internet)
+│   ├── js/i18n/                               Translations and language engine
+│   ├── js/chat/                               The chat, one file per topic
+│   ├── js/pages/                              Image and API key consoles
+│   └── vendor/                                Bundled libraries (works offline)
 ├── server/
 │   ├── config.php
-│   ├── lib/                                   Base de datos, HTTP y lectura de páginas, buscadores
-│   ├── handlers/                              Un archivo por grupo de acciones
+│   ├── lib/                                   Database, HTTP and page reading, search engines
+│   ├── handlers/                              One file per group of actions
 │   └── tools/importar-mysql.php
-├── desktop/                                   App de escritorio (Electron + PHP portátil) y scripts
-├── searxng/                                   Buscador local opcional (Docker)
-├── docs/                                      Documentación
-└── limpiar.bat                                Borra lo generado y los datos locales antes de publicar
+├── desktop/                                   Desktop app (Electron + portable PHP) and scripts
+├── searxng/                                   Optional local search engine (Docker)
+├── docs/                                      Documentation
+└── limpiar.bat                                Deletes build output and local data before publishing
 ```
 
-## Privacidad y seguridad
+## Privacy and security
 
-- Las conversaciones, la memoria y las imágenes se quedan en tu PC. Solo salen a internet las **búsquedas web** (al buscador
-  elegido y a las páginas que se leen) y la descarga de modelos.
-- La carpeta del proyecto se lee **sin escribir nada** y solo desde este PC.
-- La app de escritorio solo escucha en `127.0.0.1`. **Con XAMPP**, Apache escucha en toda tu red local: no lo expongas a internet.
-- Las API keys se guardan como hash.
+- Conversations, memory and images stay on your PC. Only **web searches** (to the chosen search engine and the pages it reads)
+  and model downloads go to the internet.
+- The project folder is read **without writing anything**, and only from this PC.
+- The desktop app only listens on `127.0.0.1`. **With XAMPP**, Apache listens on your whole local network: don't expose it to the internet.
+- API keys are stored as hashes.
 
-Más detalles en [docs/backend.md](docs/backend.md#seguridad).
+More details in [docs/backend.md](docs/backend.md#seguridad).
 
-## Licencia
+## License
 
-© 2026 **Aquaruis Canel**. Código abierto bajo la [licencia MIT](LICENSE).
+© 2026 **Aquaruis Canel**. Open source under the [MIT license](LICENSE).
 
-Puedes usar, copiar, modificar y distribuir este proyecto (también con fines comerciales) siempre que **cites a su autor**:
-conserva el aviso de copyright y el archivo `LICENSE` en cualquier copia o versión modificada, y menciona a
-Aquaruis Canel como autor original. Para citarlo en un trabajo, usa el botón «Cite this repository» de GitHub ([CITATION.cff](CITATION.cff)).
+You may use, copy, modify and distribute this project (commercially too) as long as you **credit its author**:
+keep the copyright notice and the `LICENSE` file in every copy or modified version, and mention Aquaruis Canel as the original author.
+To cite it in a work, use GitHub's «Cite this repository» button ([CITATION.cff](CITATION.cff)).
 
-Las librerías incluidas y los programas externos tienen sus propias licencias: ver [docs/terceros.md](docs/terceros.md).
+Bundled libraries and external programs have their own licenses: see [docs/terceros.md](docs/terceros.md).
