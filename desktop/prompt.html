@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Local AI UI</title>
+<style>
+  :root{--bg:#161922;--panel:#1d212c;--line:#2a2f3d;--text:#e6e8ee;--muted:#8b92a5;--accent:#6c8cff}
+  @media (prefers-color-scheme: light){:root{--bg:#fff;--panel:#eceef4;--line:#d5d9e4;--text:#1b1e27;--muted:#5f6778;--accent:#3f63e6}}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px}
+  label{white-space:pre-wrap}
+  input{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;outline:none}
+  input:focus{border-color:var(--accent)}
+  .row{display:flex;justify-content:flex-end;gap:8px;margin-top:auto}
+  button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}
+  button.ok{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+  <label id="msg" for="val"></label>
+  <input id="val" autofocus>
+  <div class="row"><button id="no">Cancelar</button><button id="ok" class="ok">Aceptar</button></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  document.getElementById('msg').textContent = q.get('m') || '';
+  const val = document.getElementById('val');
+  val.value = q.get('d') || ''; val.select();
+  const t = { en: ['Cancel', 'OK'], ru: ['Отмена', 'ОК'], zh: ['取消', '确定'], ja: ['キャンセル', 'OK'] }[q.get('lang')];
+  if (t) { document.getElementById('no').textContent = t[0]; document.getElementById('ok').textContent = t[1]; }
+  document.getElementById('ok').onclick = () => promptApi.done(val.value);
+  document.getElementById('no').onclick = () => promptApi.done(null);
+  addEventListener('keydown', e => { if (e.key === 'Enter') promptApi.done(val.value); if (e.key === 'Escape') promptApi.done(null); });
+</script>
+</body>
+</html>

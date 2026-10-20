@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "Si usas este software o partes de su código, cita a su autor como se indica aquí."
+title: "Local AI UI"
+abstract: "Interfaz de chat para modelos de IA locales con Ollama: búsqueda web automática, panel de código con ediciones, lectura de proyectos, imágenes y API compatible con OpenAI."
+type: software
+authors:
+  - name: "Aquaruis Canel"
+version: "1.0.0"
+license: MIT
+keywords:
+  - ollama
+  - llm
+  - ia-local
+  - chat
+  - electron

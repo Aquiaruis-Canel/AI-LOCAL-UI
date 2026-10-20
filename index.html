@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local AI UI</title>
+<link id="hljsCss" rel="stylesheet" href="assets/vendor/hljs/github-dark.min.css">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<aside>
+  <h1 class="brand">Local AI UI</h1>
+  <button class="new" id="newChat" data-ic="plus">Nuevo chat</button>
+  <input id="search" type="search" placeholder="Buscar en los chats… (Ctrl+K)">
+  <a class="hbtn linkbtn" href="imagenes.html" data-ic="palette">Consola de imágenes</a>
+  <a class="hbtn linkbtn" href="claves.html" data-ic="key-round">Consola de API keys</a>
+  <div id="chats"></div>
+</aside>
+
+<main>
+  <header>
+    <button id="sideToggle" class="hbtn" title="Mostrar / ocultar barra lateral" aria-label="Mostrar u ocultar la barra lateral" data-ic="menu"></button>
+    <span id="ctxinfo"></span>
+    <span id="loaded" hidden></span><button id="unloadAll" class="hbtn" hidden title="Liberar memoria: descargar todos los modelos de la RAM y la GPU" aria-label="Liberar memoria" data-ic="eject"></button>
+    <span class="fl-wrap"><button id="filesBtn" class="hbtn" hidden title="Archivos creados en este chat" data-ic="files"><span id="filesCount">0</span></button><div id="filesPop" hidden></div></span>
+    <button id="exportMd" class="hbtn" title="Exportar el chat a Markdown" data-ic="file-down">.md</button>
+    <button id="exportPdf" class="hbtn" title="Imprimir o guardar como PDF" data-ic="printer">PDF</button>
+    <span id="status">…</span>
+    <button id="settingsBtn" class="hbtn" title="Configuraciones" aria-label="Configuraciones" data-ic="settings">Configuraciones</button>
+  </header>
+
+  <div id="messages"></div>
+  <div id="ctxwarn" hidden><span>El contexto casi está lleno: el modelo empezará a olvidar mensajes.</span><button id="summarize" class="hbtn primary">Resumir y continuar</button></div>
+
+  <footer>
+    <div id="genopts">
+      <span data-ic="palette">Modo imagen (requiere FastSD CPU)</span>
+      <label><input type="checkbox" id="genAI" checked> Traducir y mejorar el prompt con la IA</label>
+      <label>Tamaño <select id="imgSize"><option>512</option><option>768</option></select></label>
+    </div>
+    <div id="attached"></div>
+    <input type="file" id="fileInput" multiple hidden>
+    <div class="modelbar">
+      <label>Modelo <select id="model"></select></label>
+      <button id="skipThink" class="hbtn primary" hidden title="Omitir el razonamiento y responder directamente" data-ic="zap">Respuesta rápida</button><label class="webmode" title="Cuándo busca la IA en internet. Automática: solo cuando la pregunta lo necesita (algo actual o que el modelo no sabe)."><span data-ic="globe">Web</span><select id="webMode"><option value="auto">Automática</option><option value="always">Siempre</option><option value="never">Nunca</option></select></label>
+    </div>
+    <div id="folderbar" hidden><span data-ic="folder-open"></span><b id="folderName"></b><span id="folderInfo" class="muted"></span><span id="folderWarn" class="warn" hidden></span><button id="folderClose" class="hbtn" title="Desconectar la carpeta de este chat" aria-label="Desconectar la carpeta" data-ic="x"></button></div>
+    <div class="row">
+      <button id="attach" title="Adjuntar archivos" aria-label="Adjuntar archivos" data-ic="paperclip"></button>
+      <button id="folderBtn" title="Conectar una carpeta o proyecto (la IA podrá leerlo)" aria-label="Conectar una carpeta" data-ic="folder"></button>
+      <button id="genToggle" title="Modo generar imagen" aria-label="Modo generar imagen" data-ic="image"></button>
+      <textarea id="input" rows="1" placeholder="Escribe un mensaje… (Enter envía, Shift+Enter nueva línea)"></textarea>
+      <button id="send">Enviar</button>
+    </div>
+  </footer>
+</main>
+
+<section id="codePanel" hidden aria-label="Panel de código">
+  <div id="cpResize" title="Arrastra para cambiar el ancho (doble clic: ancho por defecto)"></div>
+  <div class="cp-head">
+    <span id="cpIcon" class="cf-icon"></span>
+    <div class="cp-title">
+      <select id="cpFiles" title="Archivos de este chat"></select>
+      <span id="cpMeta"></span>
+    </div>
+    <div id="cpViews" class="cp-views" hidden><button data-v="code" class="on">Código</button><button data-v="preview">Vista previa</button></div>
+    <button id="cpCopy" class="hbtn" title="Copiar el archivo">Copiar</button>
+    <button id="cpDl" class="hbtn" title="Descargar el archivo" aria-label="Descargar el archivo" data-ic="download"></button>
+    <button id="cpClose" class="hbtn" title="Cerrar el panel de código (Esc)" aria-label="Cerrar" data-ic="x"></button>
+  </div>
+  <div id="cpBody" class="cp-body"><pre id="cpGutter" class="cp-gutter" aria-hidden="true"></pre><pre class="cp-code"><code id="cpCode" class="hljs"></code></pre></div>
+  <iframe id="cpPreview" sandbox="allow-scripts allow-modals allow-forms allow-popups allow-popups-to-escape-sandbox" title="Vista previa" hidden></iframe>
+</section>
+
+<dialog id="settingsDlg">
+  <div class="dlg-head"><b>Configuraciones</b><button id="settingsClose" class="hbtn" aria-label="Cerrar" data-ic="x"></button></div>
+  <div class="settings-grid">
+    <label class="wide">Idioma
+      <select id="lang"><option value="es">Español</option><option value="en">English</option><option value="ru">Русский</option><option value="zh">中文</option><option value="ja">日本語</option></select>
+    </label>
+    <label>Modo
+      <select id="mode">
+        <option value="razonar">Razonamiento</option>
+        <option value="rapido">Rápido</option>
+        <option value="preciso">Preciso</option>
+        <option value="creativo">Creativo</option>
+      </select>
+    </label>
+    <label>Modelo de visión
+      <select id="visionModel" title="Se usa automáticamente cuando el chat tiene imágenes"><option value="">— ninguno —</option></select>
+    </label>
+    <label>Contexto (tokens)
+      <input type="number" id="ctx" value="8192" step="1024" min="2048" max="40960">
+    </label>
+    <label>Temperatura
+      <input type="number" id="temp" value="0.7" step="0.1" min="0" max="2">
+    </label>
+    <label title="Máximo de páginas que se convierten a imagen en un PDF escaneado">Páginas de PDF escaneado
+      <input type="number" id="pdfPages" value="8" min="1" max="100">
+    </label>
+    <label>Tema
+      <select id="theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select>
+    </label>
+    <label>Tamaño de letra (px)
+      <input type="number" id="fontSize" value="15" min="12" max="22">
+    </label>
+    <label class="wide">Prompt de sistema (solo este chat)
+      <textarea id="sysPrompt" rows="3" placeholder="Ej.: Responde siempre en español y de forma breve."></textarea>
+    </label>
+    <label class="wide check"><input type="checkbox" id="ragOn"> Indexar documentos largos y consultarlos (RAG)</label>
+    <label class="wide">Modelo de embeddings
+      <input type="text" id="embedModel" value="nomic-embed-text">
+    </label>
+    <label class="wide">Buscador web
+      <select id="searchProvider">
+        <optgroup label="Sin API key">
+          <option value="duckduckgo">DuckDuckGo (gratis, sin configurar)</option>
+          <option value="searxng">SearXNG (instalado en tu PC)</option>
+        </optgroup>
+        <optgroup label="Con API key">
+          <option value="ollama">Ollama (API key de ollama.com)</option>
+          <option value="tavily">Tavily</option>
+          <option value="google">Google Custom Search</option>
+        </optgroup>
+      </select>
+    </label>
+    <label class="wide" data-prov="searxng">Dirección de SearXNG
+      <input type="text" id="searxUrl" placeholder="http://127.0.0.1:8888" autocomplete="off">
+    </label>
+    <label class="wide" data-prov="ollama">API key de Ollama (búsqueda web)
+      <input type="password" id="ollamaKey" placeholder="Pégala aquí (ollama.com/settings/keys)" autocomplete="off">
+    </label>
+    <label class="wide" data-prov="tavily">API key de Tavily
+      <input type="password" id="tavilyKey" placeholder="tvly-…" autocomplete="off">
+    </label>
+    <label data-prov="google">API key de Google
+      <input type="password" id="googleKey" autocomplete="off">
+    </label>
+    <label data-prov="google">ID del buscador de Google (cx)
+      <input type="text" id="googleCx" autocomplete="off">
+    </label>
+    <label class="wide check"><input type="checkbox" id="scrapeOn"> Leer el contenido de las páginas encontradas (más lento, más completo)</label>
+    <label class="wide check"><input type="checkbox" id="rewriteOn"> Con la búsqueda en «Siempre», reformular la consulta con la IA (entiende «¿y a qué hora?» por el contexto del chat)</label>
+    <div class="wide memadd">
+      <button id="testSearch" class="hbtn primary">Probar búsqueda web</button>
+      <span id="searchTestInfo" class="muted"></span>
+    </div>
+    <label class="wide check"><input type="checkbox" id="oneModel"> Mantener solo un modelo en memoria: al cambiar de IA, la anterior se descarga y libera RAM y GPU</label>
+    <label class="wide check"><input type="checkbox" id="memOn"> Memoria: la IA guarda lo que le parezca importante</label>
+    <div class="wide">
+      <div id="memList"></div>
+      <div class="memadd"><input type="text" id="memNew" placeholder="Añadir un recuerdo manualmente…"><button id="memAdd" class="hbtn">Añadir</button><button id="memClear" class="hbtn">Borrar todo</button></div>
+    </div>
+    <label>Modelo de texto por defecto
+  <select id="defModel"><option value="">— el último usado —</option></select>
+</label>
+<label>Modelo de imágenes (chat y consola)
+  <input type="text" id="imgModel" list="imgModelSug" placeholder="rupeshs/sd-turbo-openvino">
+  <datalist id="imgModelSug">
+    <option value="rupeshs/sd-turbo-openvino">
+    <option value="rupeshs/sdxs-512-0.9-openvino">
+    <option value="rupeshs/hyper-sd-sdxl-1-step-openvino-int8">
+    <option value="rupeshs/SDXL-Lightning-2steps-openvino-int8">
+    <option value="lora:Lykon/dreamshaper-8">
+  </datalist>
+</label>
+
+  </div>
+  <div class="dlg-actions settings-foot">
+    <button id="openModels" class="hbtn primary" data-ic="refresh-cw">Gestionar modelos</button>
+    <span>Descarga, actualiza y revisa los modelos de Ollama.</span>
+  </div>
+  <p class="hint">Atajos: Alt+N chat nuevo · Ctrl+B barra lateral · Ctrl+, configuraciones · Ctrl+K buscar</p>
+</dialog>
+
+<dialog id="modelsDlg">
+  <div class="dlg-head"><b>Modelos de Ollama</b><button id="dlgClose" class="hbtn" aria-label="Cerrar" data-ic="x"></button></div>
+  <div class="dlg-actions">
+    <button id="checkUpd" class="hbtn primary">Buscar actualizaciones</button>
+    <span id="updInfo">Compara tus modelos con el registro (requiere internet).</span>
+  </div>
+  <table id="modelTable"><tbody></tbody></table>
+  <div class="dlg-pull">
+    <input id="pullName" list="pullSug" placeholder="Descargar un modelo, p. ej. qwen3-vl:8b">
+    <datalist id="pullSug"><option value="qwen3-vl:8b"><option value="qwen3-vl:4b"><option value="qwen3:8b"><option value="gemma3:12b"></datalist>
+    <button id="pullBtn" class="hbtn primary">Descargar</button>
+  </div>
+  <div id="pullBox"></div>
+</dialog>
+
+<script src="assets/vendor/pdf.min.js"></script>
+<script src="assets/vendor/marked.min.js"></script>
+<script src="assets/vendor/purify.min.js"></script>
+<script src="assets/vendor/hljs/highlight.min.js"></script>
+<script src="assets/vendor/jszip.min.js"></script>
+<script src="assets/vendor/xlsx.full.min.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n/translations.js"></script>
+<script src="assets/js/i18n/engine.js"></script>
+<script src="assets/js/chat/state.js"></script>
+<script src="assets/js/chat/attachments.js"></script>
+<script src="assets/js/chat/chats.js"></script>
+<script src="assets/js/chat/code-panel.js"></script>
+<script src="assets/js/chat/files.js"></script>
+<script src="assets/js/chat/messages.js"></script>
+<script src="assets/js/chat/generation.js"></script>
+<script src="assets/js/chat/send.js"></script>
+<script src="assets/js/chat/events.js"></script>
+<script src="assets/js/chat/models.js"></script>
+<script src="assets/js/chat/ram.js"></script>
+<script src="assets/js/chat/folder.js"></script>
+<script src="assets/js/chat/file-reader.js"></script>
+<script src="assets/js/chat/memory.js"></script>
+<script src="assets/js/chat/settings.js"></script>
+<script src="assets/js/chat/actions.js"></script>
+<script src="assets/js/chat/rag.js"></script>
+<script src="assets/js/chat/main.js"></script>
+</body>
+</html>

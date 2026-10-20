@@ -1,0 +1,90 @@
+{
+  "name": "local-ai-ui",
+  "productName": "Local AI UI",
+  "version": "1.0.0",
+  "description": "Chat local para tus modelos de Ollama",
+  "author": "Aquaruis Canel",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable --x64"
+  },
+  "devDependencies": {
+    "electron": "43.7.6",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "local.ai.ui",
+    "productName": "Local AI UI",
+    "artifactName": "${productName}-${version}-${arch}-${target}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "prompt-preload.js",
+      "prompt.html",
+      "build/icon.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "..",
+        "to": "web",
+        "filter": [
+          "**/*",
+          "!desktop",
+          "!desktop/**/*",
+          "!data",
+          "!data/**/*",
+          "!searxng",
+          "!searxng/**/*",
+          "!docs",
+          "!docs/**/*",
+          "!limpiar.bat",
+          "!.gitignore",
+          "!README.md",
+          "!galeria/**/*",
+          "!**/.git/**/*",
+          "!**/*.sqlite*",
+          "!CITATION.cff"
+        ]
+      },
+      {
+        "from": "php",
+        "to": "php"
+      },
+      {
+        "from": "router.php",
+        "to": "router.php"
+      },
+      {
+        "from": "php.ini",
+        "to": "php.ini"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Local AI UI",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "copyright": "Copyright © 2026 Aquaruis Canel"
+  },
+  "license": "MIT"
+}

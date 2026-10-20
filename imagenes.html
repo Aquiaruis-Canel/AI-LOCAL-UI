@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consola de imágenes · Local AI UI</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="console">
+<aside id="imgPanel">
+  <h1 class="brand">Consola de imágenes</h1>
+  <a class="hbtn linkbtn" href="index.html" data-ic="arrow-left">Volver al chat</a>
+  <label>Prompt
+    <textarea id="prompt" rows="4" placeholder="Describe la imagen… (Ctrl+Enter genera)"></textarea>
+  </label>
+  <label>Prompt negativo
+    <input type="text" id="negative" placeholder="borroso, baja calidad…">
+  </label>
+  <label>Modelo (ID de Hugging Face)
+    <input type="text" id="model" list="modelSug" value="rupeshs/sd-turbo-openvino">
+    <datalist id="modelSug">
+      <option value="rupeshs/sd-turbo-openvino">
+      <option value="rupeshs/sdxs-512-0.9-openvino">
+      <option value="rupeshs/hyper-sd-sdxl-1-step-openvino-int8">
+      <option value="rupeshs/SDXL-Lightning-2steps-openvino-int8">
+      <option value="stabilityai/sd-turbo">
+    </datalist>
+  </label>
+  <div class="two">
+    <label>Pasos <input type="number" id="steps" value="2" min="1" max="50"></label>
+    <label>Guidance <input type="number" id="guidance" value="1" step="0.5" min="0" max="20"></label>
+  </div>
+  <div class="two">
+    <label>Ancho <select id="width"></select></label>
+    <label>Alto <select id="height"></select></label>
+  </div>
+  <div class="two">
+    <label>Cantidad <input type="number" id="count" value="1" min="1" max="4"></label>
+    <label>Semilla (vacía = aleatoria) <input type="number" id="seed"></label>
+  </div>
+  <label class="ck"><input type="checkbox" id="openvino" checked> Usar OpenVINO (recomendado en Intel)</label>
+  <label class="ck"><input type="checkbox" id="tiny" checked> Tiny AutoEncoder (más rápido)</label>
+  <label class="ck"><input type="checkbox" id="improve"> Traducir y mejorar el prompt con la IA</label>
+  <label>Modelo de texto (para mejorar el prompt)
+    <select id="textModel"></select>
+  </label>
+  <button id="go" class="hbtn primary">Generar</button>
+</aside>
+
+<main>
+  <header>
+    <span>Resultados de esta sesión</span>
+    <span id="status">…</span>
+    <select id="lang" class="langsel" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option><option value="ru">Русский</option><option value="zh">中文</option><option value="ja">日本語</option></select>
+    <button id="clear" class="hbtn">Vaciar</button>
+  </header>
+  <div id="gallery"></div>
+  <pre id="log"></pre>
+</main>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n/translations.js"></script>
+<script src="assets/js/i18n/engine.js"></script>
+<script src="assets/js/pages/imagenes.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Configuración mínima de SearXNG para Local AI UI (la usa iniciar-searxng.bat).
+# Lo importante: «json» en formats, sin eso la app no puede leer los resultados.
+use_default_settings: true
+
+general:
+  instance_name: "Local AI UI"
+
+server:
+  secret_key: "38d65dc5f2f1818f11c7f8ade402b9a28eee29b017c15c283c30656c8171d1cc"
+  limiter: false        # uso personal: sin límite de peticiones
+  image_proxy: false
+  public_instance: false
+
+search:
+  safe_search: 0
+  default_lang: "auto"
+  formats:
+    - html
+    - json

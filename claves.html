@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consola de API keys · Local AI UI</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="console">
+<aside id="keyPanel">
+  <h1 class="brand">Consola de API keys</h1>
+  <a class="hbtn linkbtn" href="index.html" data-ic="arrow-left">Volver al chat</a>
+
+  <h2>Crear API key local</h2>
+  <label>Nombre
+    <input type="text" id="keyName" placeholder="p. ej. Mi script de Python">
+  </label>
+  <label>Modelo de IA asignado
+    <select id="keyModel"><option value="">Cualquier modelo</option></select>
+  </label>
+  <p class="note">Con un modelo asignado, la clave solo puede usar ese modelo (y /v1/models solo lo lista a él).</p>
+  <label class="ck"><input type="checkbox" id="keyWeb" checked> Puede usar la búsqueda web</label>
+  <button id="keyCreate" class="hbtn primary">Crear API key</button>
+  <p class="note">La clave completa solo se muestra una vez. En la base de datos se guarda únicamente su hash.</p>
+
+  <h2>Buscador del servidor</h2>
+  <p class="note">Lo usa la API /v1 cuando un script pide búsqueda web. El chat usa el de sus propias Configuraciones y, si allí falta algún dato, este.</p>
+  <label>Buscador
+    <select id="sProvider">
+      <optgroup label="Sin API key">
+        <option value="duckduckgo">DuckDuckGo (gratis, sin configurar)</option>
+        <option value="searxng">SearXNG (instalado en tu PC)</option>
+      </optgroup>
+      <optgroup label="Con API key">
+        <option value="ollama">Ollama (API key de ollama.com)</option>
+        <option value="tavily">Tavily</option>
+        <option value="google">Google Custom Search</option>
+      </optgroup>
+    </select>
+  </label>
+  <label data-prov="searxng">Dirección de SearXNG
+    <input type="text" id="sSearx" placeholder="http://127.0.0.1:8888" autocomplete="off">
+  </label>
+  <label data-prov="ollama">API key de Ollama
+    <input type="password" id="sKey" autocomplete="off">
+  </label>
+  <label data-prov="tavily">API key de Tavily
+    <input type="password" id="sTavily" autocomplete="off">
+  </label>
+  <label data-prov="google">API key de Google
+    <input type="password" id="sGoogle" autocomplete="off">
+  </label>
+  <label data-prov="google">ID del buscador (cx)
+    <input type="text" id="sCx" autocomplete="off">
+  </label>
+  <label class="ck"><input type="checkbox" id="sScrape"> Leer el contenido de las páginas (raspado)</label>
+  <div class="btnrow">
+    <button id="sSave" class="hbtn primary">Guardar</button>
+    <button id="sTest" class="hbtn">Probar</button>
+    <button id="sClear" class="hbtn">Borrar claves guardadas</button>
+  </div>
+  <span id="sInfo" class="muted"></span>
+</aside>
+
+<main>
+  <header>
+    <span>API keys locales</span>
+    <span id="status">…</span>
+    <select id="lang" class="langsel" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option><option value="ru">Русский</option><option value="zh">中文</option><option value="ja">日本語</option></select>
+    <button id="reload" class="hbtn">Actualizar</button>
+  </header>
+
+  <div id="keyMain">
+    <section id="newKey" class="newkey" hidden>
+      <b>✔ API key creada. Cópiala ahora: no se vuelve a mostrar.</b>
+      <code id="newKeyVal"></code>
+      <div><button id="copyKey" class="hbtn primary">Copiar</button></div>
+    </section>
+
+    <section>
+      <h2>Tus claves</h2>
+      <table id="keyTable">
+        <thead><tr><th>Nombre</th><th>Clave</th><th>Modelo</th><th>Web</th><th>Creada</th><th>Último uso</th><th>Usos</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="noKeys" hidden>Aún no hay claves. Crea una a la izquierda.</p>
+    </section>
+
+    <section>
+      <h2>Cómo usarla</h2>
+      <p>Es una API compatible con OpenAI que reenvía a tu Ollama local. Dirección base:</p>
+      <pre><code id="baseUrl"></code></pre>
+      <p>Búsqueda web (agente): el servidor busca, junta el texto encontrado con la pregunta y se lo pasa al modelo. Actívala con "web_search": true en el cuerpo, o añadiendo +web al nombre del modelo. La clave debe tener el permiso «Web». Las fuentes salen en la cabecera X-Web-Sources y en el campo web_sources de la respuesta.</p>
+      <p>Modelo asignado: si la clave tiene un modelo asignado, "model" es opcional en las peticiones; pedir otro modelo devuelve un error 403.</p>
+      <pre><code id="exCurl"></code></pre>
+      <pre><code id="exPy"></code></pre>
+      <p>Si el servidor responde «Falta la API key» aunque la envíes, comprueba que existe el archivo .htaccess junto a api.php y reinicia Apache. No expongas este servidor a internet: cualquiera con acceso a la página puede crear claves.</p>
+    </section>
+
+    <section>
+      <h2>Probar</h2>
+      <div class="tgrid">
+        <label>API key
+          <input type="password" id="tKey" placeholder="sk-local-…" autocomplete="off">
+        </label>
+        <label>Modelo
+          <select id="tModel"></select>
+        </label>
+      </div>
+      <label class="ck" style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" id="tWeb"> Con búsqueda web (+web)</label>
+      <textarea id="tPrompt">¿Cuál es la fecha de hoy y qué noticia reciente puedes citarme? Menciona las fuentes.</textarea>
+      <div class="btnrow" style="display:flex;gap:6px;margin:8px 0">
+        <button id="tPing" class="hbtn">Comprobar clave</button>
+        <button id="tGo" class="hbtn primary">Enviar pregunta de prueba</button>
+      </div>
+      <pre id="tOut">—</pre>
+    </section>
+  </div>
+</main>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n/translations.js"></script>
+<script src="assets/js/i18n/engine.js"></script>
+<script src="assets/js/pages/claves.js"></script>
+</body>
+</html>
